@@ -41,6 +41,25 @@ contract Dex is ERC20{
 
     }
 
+    function removeLiquidity(uint256 _amountOfLp) public returns(uint256, uint256) {
+        
+        require(_amountOfLp > 0);
+        
+        uint256 tokenReserve  = getReserves();
+        uint256 ethReserve    = address(this).balance; 
+        uint256 lpTotalSupply = totalSupply();
+
+        uint256 ethToWithdraw   = (ethReserve * _amountOfLp) / lpTotalSupply;
+        uint256 tokenToWithdraw = (tokenReserve * _amountOfLp) / lpTotalSupply;
+
+        _burn(address(this), _amountOfLp);
+        IERC20(tokenAddress).transfer(msg.sender, tokenToWithdraw);
+        (bool success, ) = payable(msg.sender).call{value: ethToWithdraw}("");
+        require(success, "Transfer failed!");
+        return(ethToWithdraw, tokenToWithdraw);
+
+    }
+
     // View functions 
     function getReserves() public view returns(uint256 balance) {
         balance = IERC20(tokenAddress).balanceOf(address(this));
